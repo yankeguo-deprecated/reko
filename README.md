@@ -15,3 +15,7 @@ GET /service-name:tag1,tag2/path1/path2
 // service with specified id
 GET /service-name@service-id/path1/path2
 ```
+
+## Credits
+
+Guo Y.K., MIT License
