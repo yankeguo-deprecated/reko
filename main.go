@@ -33,5 +33,5 @@ func main() {
 		return
 	}
 
-	_ = http.ListenAndServe(optBind, &Handler{Client: client})
+	_ = http.ListenAndServe(optBind, NewHandler(client))
 }
