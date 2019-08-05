@@ -19,14 +19,14 @@ func (p *Proxy) Director(r *http.Request) {
 }
 
 func (p *Proxy) ErrorHandler(rw http.ResponseWriter, r *http.Request, err error) {
-	log.Printf("upstream %s failed", p.Hosts[p.Cursor])
+	log.Printf("upstream %s failed: %s", p.Hosts[p.Cursor], err.Error())
 	p.Cursor++
 	if p.Cursor < len(p.Hosts) {
 		p.ReverseProxy.ServeHTTP(rw, r)
 		return
 	}
 	rw.WriteHeader(http.StatusServiceUnavailable)
-	_, _ = rw.Write([]byte(fmt.Sprintf("reko: all services failed")))
+	_, _ = rw.Write([]byte(fmt.Sprintf("reko: all upstreams failed")))
 }
 
 func NewProxy(hosts []string) httputil.ReverseProxy {
