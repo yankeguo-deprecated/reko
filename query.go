@@ -49,18 +49,20 @@ func ExtractServiceQuery(u *url.URL) (q ServiceQuery, err error) {
 	return
 }
 
-func (q ServiceQuery) Resolve(client *consul.Client) (hosts []string, err error) {
+func (q ServiceQuery) Resolve(client *consul.Client) (ups []Upstream, err error) {
 	var ret []*consul.CatalogService
 	if ret, _, err = client.Catalog().ServiceMultipleTags(q.Name, q.Tags, &consul.QueryOptions{AllowStale: true}); err != nil {
 		return
 	}
 	for _, s := range ret {
 		if len(q.ID) == 0 || s.ServiceID == q.ID {
+			u := Upstream{Name: s.ServiceID}
 			if len(s.ServiceAddress) > 0 {
-				hosts = append(hosts, s.ServiceAddress+":"+strconv.Itoa(s.ServicePort))
+				u.Host = s.ServiceAddress + ":" + strconv.Itoa(s.ServicePort)
 			} else {
-				hosts = append(hosts, s.Address+":"+strconv.Itoa(s.ServicePort))
+				u.Host = s.Address + ":" + strconv.Itoa(s.ServicePort)
 			}
+			ups = append(ups, u)
 		}
 	}
 	return

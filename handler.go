@@ -32,10 +32,10 @@ func (h *Handler) NextRR(key string) uint64 {
 	return atomic.AddUint64(rr, 1)
 }
 
-func (h *Handler) Rotate(key string, hosts []string) []string {
+func (h *Handler) Rotate(key string, ups []Upstream) []Upstream {
 	rr := h.NextRR(key)
-	cr := rr % uint64(len(hosts))
-	return append(hosts[cr:], hosts[0:cr]...)
+	cr := rr % uint64(len(ups))
+	return append(ups[cr:], ups[0:cr]...)
 }
 
 func (h *Handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
@@ -52,7 +52,7 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var hosts []string
+	var hosts []Upstream
 	if hosts, err = q.Resolve(h.Client); err != nil {
 		return
 	}
