@@ -65,6 +65,7 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	// rotate hosts
 	hosts = h.Rotate(q.Raw, hosts)
 
-	// proxy
-	Forward(hosts, rw, r)
+	// execute proxy
+	rp := NewProxy(hosts)
+	rp.ServeHTTP(rw, r)
 }
