@@ -12,18 +12,18 @@ type Upstream struct {
 	Host string
 }
 
-type Proxy struct {
-	Upstreams    []Upstream
-	Cursor       int
-	ReverseProxy httputil.ReverseProxy
+type reverseProxy struct {
+	*httputil.ReverseProxy
+	Upstreams []Upstream
+	Cursor    int
 }
 
-func (p *Proxy) Director(r *http.Request) {
+func (p *reverseProxy) director(r *http.Request) {
 	r.URL.Scheme = "http"
 	r.URL.Host = p.Upstreams[p.Cursor].Host
 }
 
-func (p *Proxy) ErrorHandler(rw http.ResponseWriter, r *http.Request, err error) {
+func (p *reverseProxy) errorHandler(rw http.ResponseWriter, r *http.Request, err error) {
 	log.Printf("upstream %+v failed: %s", p.Upstreams[p.Cursor], err.Error())
 	p.Cursor++
 	if p.Cursor < len(p.Upstreams) {
@@ -34,15 +34,19 @@ func (p *Proxy) ErrorHandler(rw http.ResponseWriter, r *http.Request, err error)
 	_, _ = rw.Write([]byte(fmt.Sprintf("reko: all upstreams failed")))
 }
 
-func (p *Proxy) ModifyResponse(res *http.Response) error {
+func (p *reverseProxy) modifyResponse(res *http.Response) error {
 	res.Header.Set("X-Reko-Upstream", p.Upstreams[p.Cursor].Name)
 	return nil
 }
 
-func NewProxy(upstreams []Upstream) httputil.ReverseProxy {
-	p := &Proxy{Upstreams: upstreams}
-	p.ReverseProxy.Director = p.Director
-	p.ReverseProxy.ErrorHandler = p.ErrorHandler
-	p.ReverseProxy.ModifyResponse = p.ModifyResponse
-	return p.ReverseProxy
+func NewProxy(upstreams []Upstream) http.Handler {
+	p := &reverseProxy{
+		Upstreams: upstreams,
+	}
+	p.ReverseProxy = &httputil.ReverseProxy{
+		Director:       p.director,
+		ModifyResponse: p.modifyResponse,
+		ErrorHandler:   p.errorHandler,
+	}
+	return p
 }

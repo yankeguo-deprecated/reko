@@ -5,31 +5,28 @@ import (
 	"fmt"
 	consul "github.com/hashicorp/consul/api"
 	"net/http"
+	"sync"
 	"sync/atomic"
 )
 
 type Handler struct {
 	Client *consul.Client
 
-	RR map[string]*uint64
+	RR *sync.Map
 }
 
 func NewHandler(client *consul.Client) *Handler {
 	return &Handler{
 		Client: client,
-		RR:     map[string]*uint64{},
+		RR:     &sync.Map{},
 	}
 }
 
 func (h *Handler) NextRR(key string) uint64 {
 	// no locking, allow inconsistency for better perf
-	rr := h.RR[key]
-	if rr == nil {
-		rr = new(uint64)
-		h.RR[key] = rr
-	}
+	rr, _ := h.RR.LoadOrStore(key, new(uint64))
 	// increase
-	return atomic.AddUint64(rr, 1)
+	return atomic.AddUint64(rr.(*uint64), 1)
 }
 
 func (h *Handler) Rotate(key string, ups []Upstream) []Upstream {
@@ -66,6 +63,6 @@ func (h *Handler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	hosts = h.Rotate(q.Raw, hosts)
 
 	// execute proxy
-	rp := NewProxy(hosts)
-	rp.ServeHTTP(rw, r)
+	NewProxy(hosts).ServeHTTP(rw, r)
+
 }
