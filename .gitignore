@@ -16,3 +16,6 @@
 
 # Executable
 /reko
+
+# Instance ID
+/reko-id

@@ -16,6 +16,16 @@ GET /service-name:tag1,tag2/path1/path2
 GET /service-name@service-id/path1/path2
 ```
 
+## Persisted Storage
+
+`reko` will register self as a `consul` service, the instance id will be persisted to current directory
+
+```
+reko-id
+```
+
+To deregister current reko instance, run `reko --deregister` manually.
+
 ## Credits
 
 Guo Y.K., MIT License
